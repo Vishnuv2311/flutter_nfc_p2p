@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tech filter for ACTION_TECH_DISCOVERED.
+    Matches ISO-DEP tags (the transport layer used by HCE).
+    The app will be woken when the receiver phone taps an HCE sender.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <tech-list>
+        <tech>android.nfc.tech.IsoDep</tech>
+    </tech-list>
+    <tech-list>
+        <tech>android.nfc.tech.NfcA</tech>
+    </tech-list>
+    <tech-list>
+        <tech>android.nfc.tech.NfcB</tech>
+    </tech-list>
+</resources>

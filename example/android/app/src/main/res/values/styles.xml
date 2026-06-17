@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch screen theme: keeps the splash window background white while
+         Flutter is initialising. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+
+    <!-- Normal theme applied to MainActivity once Flutter has rendered its
+         first frame. The NormalTheme meta-data in the manifest tells the
+         Flutter v2 embedding to switch to this theme after launch. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

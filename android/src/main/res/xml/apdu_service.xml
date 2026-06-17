@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Declares the custom AID (Application Identifier) for the HCE service.
+
+    AID F0 01 02 03 04 05 06 is in the "proprietary" range (F0 prefix),
+    which does not conflict with any payment scheme AID.
+    Change this AID if you need to avoid conflicts with other apps on
+    the same device — and update NFC_AID in HceService.kt to match.
+-->
+<host-apdu-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/nfc_service_description"
+    android:requireDeviceUnlock="false">
+
+    <aid-group
+        android:description="@string/nfc_service_description"
+        android:category="other">
+        <aid-filter android:name="F001020304050607" />
+    </aid-group>
+
+</host-apdu-service>

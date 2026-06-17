@@ -1,0 +1,24 @@
+name: flutter_nfc_p2p_example
+description: Demonstrates the flutter_nfc_p2p plugin — custom phone-to-phone NFC payment handshake.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_nfc_p2p:
+    path: ../
+
+  http: ^1.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

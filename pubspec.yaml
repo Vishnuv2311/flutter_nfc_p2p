@@ -1,0 +1,27 @@
+name: flutter_nfc_p2p
+description: A Flutter plugin for custom phone-to-phone NFC interactions using HCE (Host Card Emulation) for a closed-loop payment system. Strictly headless — no UI components.
+version: 0.1.0
+homepage: https://github.com/your-org/flutter_nfc_p2p
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.vishnuv.flutter_nfc_p2p
+        pluginClass: FlutterNfcP2pPlugin
+      ios:
+        pluginClass: SwiftFlutterNfcP2pPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
