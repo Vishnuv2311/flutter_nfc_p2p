@@ -33,8 +33,14 @@ abstract class FlutterNfcP2pPlatform extends PlatformInterface {
   /// Start HCE (Host Card Emulation) on the sender device.
   ///
   /// [token] is the secure, short-lived token that the receiver will read.
+  /// [notificationTitle] and [notificationBody] customise the notification shown
+  /// on the sender when a tap is detected while the app is backgrounded.
   /// Throws [UnsupportedError] if HCE is not supported.
-  Future<void> startHce(String token);
+  Future<void> startHce(
+    String token, {
+    String? notificationTitle,
+    String? notificationBody,
+  });
 
   /// Stop the active HCE service.
   Future<void> stopHce();
@@ -50,4 +56,21 @@ abstract class FlutterNfcP2pPlatform extends PlatformInterface {
 
   /// Returns true if NFC is available and enabled on this device.
   Future<bool> isNfcAvailable();
+
+  /// Returns true if this plugin's HCE service is the system-default
+  /// for its AID category on this device.
+  Future<bool> isDefaultHceService();
+
+  /// Marks this plugin's HCE service as the foreground-preferred service
+  /// while the current activity is in the foreground.
+  /// Returns true if the system accepted the preference.
+  Future<bool> setPreferredHceService();
+
+  /// Clears the foreground-preferred service set by [setPreferredHceService].
+  Future<void> clearPreferredHceService();
+
+  /// Opens the system NFC "change default" settings screen.
+  /// On both Pixel (AOSP) and Samsung this launches the native UI that lets
+  /// the user select this app as the default contactless payment app.
+  Future<void> openHceDefaultSettings();
 }

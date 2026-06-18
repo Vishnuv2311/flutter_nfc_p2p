@@ -3,6 +3,8 @@
 
     <!-- NFC hardware feature declaration -->
     <uses-permission android:name="android.permission.NFC" />
+    <!-- Required to post payment-sent notifications on Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
     <uses-feature android:name="android.hardware.nfc.hce" android:required="false" />
 

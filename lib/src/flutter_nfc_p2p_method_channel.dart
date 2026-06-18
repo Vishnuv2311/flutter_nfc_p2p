@@ -35,9 +35,17 @@ class MethodChannelFlutterNfcP2p extends FlutterNfcP2pPlatform {
   }
 
   @override
-  Future<void> startHce(String token) async {
+  Future<void> startHce(
+    String token, {
+    String? notificationTitle,
+    String? notificationBody,
+  }) async {
     try {
-      await _methodChannel.invokeMethod<void>('startHce', {'token': token});
+      await _methodChannel.invokeMethod<void>('startHce', {
+        'token': token,
+        if (notificationTitle != null) 'notificationTitle': notificationTitle,
+        if (notificationBody != null) 'notificationBody': notificationBody,
+      });
     } on PlatformException catch (e) {
       _throwMapped(e);
     }
@@ -76,6 +84,26 @@ class MethodChannelFlutterNfcP2p extends FlutterNfcP2pPlatform {
         await _methodChannel.invokeMethod<bool>('isNfcAvailable') ?? false;
     return result;
   }
+
+  @override
+  Future<bool> isDefaultHceService() =>
+      _methodChannel.invokeMethod<bool>('isDefaultHceService').then(
+            (v) => v ?? false,
+          );
+
+  @override
+  Future<bool> setPreferredHceService() =>
+      _methodChannel.invokeMethod<bool>('setPreferredHceService').then(
+            (v) => v ?? false,
+          );
+
+  @override
+  Future<void> clearPreferredHceService() =>
+      _methodChannel.invokeMethod<void>('clearPreferredHceService');
+
+  @override
+  Future<void> openHceDefaultSettings() =>
+      _methodChannel.invokeMethod<void>('openHceDefaultSettings');
 
   static NfcEvent _parseEvent(dynamic raw) {
     if (raw is! Map) return const NfcErrorEvent('Malformed event from native');

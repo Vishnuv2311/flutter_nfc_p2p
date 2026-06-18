@@ -33,6 +33,10 @@ class FlutterNfcP2pPlugin :
 
         /** Timeout for IsoDep transceive in ms */
         private const val TRANSCEIVE_TIMEOUT_MS = 5_000
+
+        /** True while the host activity is in the foreground. Read by HceService. */
+        @Volatile
+        var isAppInForeground: Boolean = false
     }
 
     private lateinit var methodChannel: MethodChannel
@@ -67,18 +71,22 @@ class FlutterNfcP2pPlugin :
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
+        isAppInForeground = true
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        isAppInForeground = false
         activity = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
+        isAppInForeground = true
     }
 
     override fun onDetachedFromActivity() {
         stopReaderInternal()
+        isAppInForeground = false
         activity = null
     }
 
@@ -107,7 +115,12 @@ class FlutterNfcP2pPlugin :
                     result.error("INVALID_ARGUMENT", "token is required", null)
                     return
                 }
-                startHce(token, result)
+                startHce(
+                    token,
+                    call.argument<String>("notificationTitle"),
+                    call.argument<String>("notificationBody"),
+                    result
+                )
             }
             "stopHce" -> stopHce(result)
             "startReader" -> startReader(result)
@@ -123,7 +136,12 @@ class FlutterNfcP2pPlugin :
     // HCE (Sender side)
     // -------------------------------------------------------------------------
 
-    private fun startHce(token: String, result: Result) {
+    private fun startHce(
+        token: String,
+        notificationTitle: String?,
+        notificationBody: String?,
+        result: Result
+    ) {
         val adapter = nfcAdapter
         if (adapter == null || !adapter.isEnabled) {
             result.error("NFC_UNAVAILABLE", "NFC is not available or disabled", null)
@@ -136,10 +154,19 @@ class FlutterNfcP2pPlugin :
 
         HceService.currentToken = token
 
-        // Persist so HceService can return the token even if this process is killed.
+        // Persist token and optional notification text so HceService can use them
+        // even if this process is killed.
+        val notificationEnabled = notificationTitle != null || notificationBody != null
         appContext.getSharedPreferences(HceService.PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(HceService.PREFS_KEY_TOKEN, token)
+            .putBoolean(HceService.PREFS_KEY_NOTIFICATION_ENABLED, notificationEnabled)
+            .apply {
+                if (notificationTitle != null)
+                    putString(HceService.PREFS_KEY_NOTIFICATION_TITLE, notificationTitle)
+                if (notificationBody != null)
+                    putString(HceService.PREFS_KEY_NOTIFICATION_BODY, notificationBody)
+            }
             .apply()
 
         sendEvent(mapOf("type" to "hceStarted"))
@@ -151,6 +178,7 @@ class FlutterNfcP2pPlugin :
         appContext.getSharedPreferences(HceService.PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .remove(HceService.PREFS_KEY_TOKEN)
+            .remove(HceService.PREFS_KEY_NOTIFICATION_ENABLED)
             .apply()
         sendEvent(mapOf("type" to "hceStopped"))
         result.success(null)

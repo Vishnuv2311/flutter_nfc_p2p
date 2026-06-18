@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_nfc_p2p/flutter_nfc_p2p.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 
 void main() => runApp(const NfcPaymentApp());
 
@@ -140,13 +142,33 @@ class _SenderScreenState extends State<SenderScreen> {
   _SenderStatus _status = _SenderStatus.idle;
   String? _token;
   String? _errorMessage;
+  bool _isDefaultService = false;
 
   static const String _mockToken = 'PAY-TOKEN-ABC123XYZ789';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDefaultStatus();
+    _requestNotificationPermission();
+  }
+
+  Future<void> _checkDefaultStatus() async {
+    final isDefault = await FlutterNfcP2p.isDefaultHceService();
+    if (mounted) setState(() => _isDefaultService = isDefault);
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    if (!Platform.isAndroid) return;
+    final status = await Permission.notification.status;
+    if (status.isDenied) await Permission.notification.request();
+  }
 
   @override
   void dispose() {
     _sub?.cancel();
     FlutterNfcP2p.stopHce();
+    FlutterNfcP2p.clearPreferredHceService();
     super.dispose();
   }
 
@@ -162,7 +184,12 @@ class _SenderScreenState extends State<SenderScreen> {
     _sub = FlutterNfcP2p.eventStream.listen(_handleEvent);
 
     try {
-      await FlutterNfcP2p.startHce(token: token);
+      await FlutterNfcP2p.startHce(
+        token: token,
+        notificationTitle: 'Payment Sent',
+        notificationBody: 'Your payment token was transmitted successfully',
+      );
+      await FlutterNfcP2p.setPreferredHceService();
       setState(() {
         _token = token;
         _status = _SenderStatus.broadcasting;
@@ -182,6 +209,7 @@ class _SenderScreenState extends State<SenderScreen> {
 
   Future<void> _stopBroadcasting() async {
     await FlutterNfcP2p.stopHce();
+    await FlutterNfcP2p.clearPreferredHceService();
     await _sub?.cancel();
     _sub = null;
     setState(() {
@@ -220,7 +248,39 @@ class _SenderScreenState extends State<SenderScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _StatusBanner(status: _status, errorMessage: _errorMessage),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            // Default payment app indicator / button
+            if (_isDefaultService)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 18),
+                    SizedBox(width: 8),
+                    Text('Set as default contactless payment app',
+                        style: TextStyle(color: Colors.green, fontSize: 13)),
+                  ],
+                ),
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await FlutterNfcP2p.openHceDefaultSettings();
+                  await _checkDefaultStatus();
+                },
+                icon: const Icon(Icons.settings, size: 18),
+                label: const Text('Set as Default Contactless Payment'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.indigo,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            const SizedBox(height: 16),
             if (_status == _SenderStatus.broadcasting) ...[
               _InfoCard(
                 icon: Icons.lock,
