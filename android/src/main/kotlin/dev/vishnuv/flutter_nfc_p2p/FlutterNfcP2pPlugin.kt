@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.cardemulation.CardEmulation
 import android.nfc.tech.IsoDep
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -128,6 +130,16 @@ class FlutterNfcP2pPlugin :
                 stopReaderInternal()
                 result.success(null)
             }
+            "isDefaultHceService" -> result.success(isDefaultHceService())
+            "setPreferredHceService" -> result.success(setPreferredHceService())
+            "clearPreferredHceService" -> {
+                clearPreferredHceService()
+                result.success(null)
+            }
+            "openHceDefaultSettings" -> {
+                openHceDefaultSettings()
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -182,6 +194,81 @@ class FlutterNfcP2pPlugin :
             .apply()
         sendEvent(mapOf("type" to "hceStopped"))
         result.success(null)
+    }
+
+    // -------------------------------------------------------------------------
+    // HCE service routing (foreground-preferred / default selection)
+    // -------------------------------------------------------------------------
+
+    private fun hceComponent() = ComponentName(appContext, HceService::class.java)
+
+    private fun cardEmulation(): CardEmulation? {
+        val adapter = nfcAdapter ?: return null
+        return try {
+            CardEmulation.getInstance(adapter)
+        } catch (e: Exception) {
+            Log.w(TAG, "CardEmulation unavailable: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Whether this app's HCE service is the system default for its AID category.
+     * Only CATEGORY_PAYMENT has a notion of a default service; an "other"-category
+     * service is always reachable, so we report true when the API doesn't apply.
+     */
+    private fun isDefaultHceService(): Boolean {
+        val ce = cardEmulation() ?: return false
+        return try {
+            ce.isDefaultServiceForCategory(hceComponent(), CardEmulation.CATEGORY_PAYMENT)
+        } catch (e: Exception) {
+            Log.w(TAG, "isDefaultServiceForCategory failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Marks this app's HCE service as the foreground-preferred service so NFC taps
+     * route here without a disambiguation dialog. Requires a resumed activity.
+     */
+    private fun setPreferredHceService(): Boolean {
+        val ce = cardEmulation() ?: return false
+        val act = activity ?: return false
+        return try {
+            ce.setPreferredService(act, hceComponent())
+        } catch (e: Exception) {
+            Log.w(TAG, "setPreferredService failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun clearPreferredHceService() {
+        val ce = cardEmulation() ?: return
+        val act = activity ?: return
+        try {
+            ce.unsetPreferredService(act)
+        } catch (e: Exception) {
+            Log.w(TAG, "unsetPreferredService failed: ${e.message}")
+        }
+    }
+
+    /** Opens the system NFC contactless-payment / default-app settings screen. */
+    private fun openHceDefaultSettings() {
+        val intent = Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            (activity ?: appContext).startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "ACTION_NFC_PAYMENT_SETTINGS failed, falling back: ${e.message}")
+            try {
+                (activity ?: appContext).startActivity(
+                    Intent(Settings.ACTION_NFC_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            } catch (e2: Exception) {
+                Log.w(TAG, "ACTION_NFC_SETTINGS failed: ${e2.message}")
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

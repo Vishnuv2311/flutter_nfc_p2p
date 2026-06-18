@@ -219,6 +219,7 @@ class _SenderScreenState extends State<SenderScreen> {
   }
 
   void _handleEvent(NfcEvent event) {
+    if (!mounted) return;
     switch (event) {
       case HceStartedEvent():
         setState(() => _status = _SenderStatus.broadcasting);
@@ -404,6 +405,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
   }
 
   void _handleEvent(NfcEvent event) {
+    if (!mounted) return;
     switch (event) {
       case NfcListeningEvent():
         setState(() => _status = _ReceiverStatus.listening);
