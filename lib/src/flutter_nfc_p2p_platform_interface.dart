@@ -50,4 +50,21 @@ abstract class FlutterNfcP2pPlatform extends PlatformInterface {
 
   /// Returns true if NFC is available and enabled on this device.
   Future<bool> isNfcAvailable();
+
+  /// Returns true if this plugin's HCE service is the system-default
+  /// for its AID category on this device.
+  Future<bool> isDefaultHceService();
+
+  /// Marks this plugin's HCE service as the foreground-preferred service
+  /// while the current activity is in the foreground.
+  /// Returns true if the system accepted the preference.
+  Future<bool> setPreferredHceService();
+
+  /// Clears the foreground-preferred service set by [setPreferredHceService].
+  Future<void> clearPreferredHceService();
+
+  /// Opens the system NFC "change default" settings screen.
+  /// On both Pixel (AOSP) and Samsung this launches the native UI that lets
+  /// the user select this app as the default contactless payment app.
+  Future<void> openHceDefaultSettings();
 }

@@ -77,4 +77,32 @@ class FlutterNfcP2p {
 
   /// Returns true if NFC is supported and enabled on this device.
   static Future<bool> isNfcAvailable() => _platform.isNfcAvailable();
+
+  /// Returns true if this plugin's HCE service is the system-default
+  /// for its AID category on this device.
+  static Future<bool> isDefaultHceService() => _platform.isDefaultHceService();
+
+  /// Marks this plugin's HCE service as the foreground-preferred service
+  /// while the current activity is in the foreground.
+  ///
+  /// Call this when the HCE sender screen becomes visible so the system
+  /// routes NFC taps to this app without a disambiguation dialog.
+  /// Works on both Pixel (AOSP) and Samsung devices.
+  ///
+  /// Returns true if the system accepted the preference.
+  static Future<bool> setPreferredHceService() =>
+      _platform.setPreferredHceService();
+
+  /// Clears the foreground-preferred service previously set by
+  /// [setPreferredHceService]. Call this when the HCE sender screen is hidden.
+  static Future<void> clearPreferredHceService() =>
+      _platform.clearPreferredHceService();
+
+  /// Opens the system NFC "change default" settings screen so the user can
+  /// permanently select this app as the default contactless payment app.
+  ///
+  /// Uses [CardEmulation.ACTION_CHANGE_DEFAULT] which is handled by both
+  /// the AOSP NFC settings (Pixel) and Samsung's NFC settings app.
+  static Future<void> openHceDefaultSettings() =>
+      _platform.openHceDefaultSettings();
 }

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.cardemulation.CardEmulation
 import android.nfc.tech.IsoDep
 import android.os.Bundle
 import android.util.Log
@@ -115,6 +116,10 @@ class FlutterNfcP2pPlugin :
                 stopReaderInternal()
                 result.success(null)
             }
+            "isDefaultHceService" -> result.success(isDefaultHceService())
+            "setPreferredHceService" -> setPreferredHceService(result)
+            "clearPreferredHceService" -> clearPreferredHceService(result)
+            "openHceDefaultSettings" -> openHceDefaultSettings(result)
             else -> result.notImplemented()
         }
     }
@@ -236,6 +241,55 @@ class FlutterNfcP2pPlugin :
         } finally {
             try { isoDep.close() } catch (_: IOException) {}
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // CardEmulation helpers (default / preferred service)
+    // -------------------------------------------------------------------------
+
+    private fun hceComponentName() = ComponentName(appContext, HceService::class.java)
+
+    private fun isDefaultHceService(): Boolean {
+        val ce = CardEmulation.getInstance(nfcAdapter ?: return false)
+        return ce.isDefaultServiceForCategory(hceComponentName(), CardEmulation.CATEGORY_OTHER)
+    }
+
+    private fun setPreferredHceService(result: Result) {
+        val act = activity ?: run {
+            result.error("NO_ACTIVITY", "Plugin is not attached to an activity", null)
+            return
+        }
+        val ce = CardEmulation.getInstance(nfcAdapter ?: run {
+            result.error("NFC_UNAVAILABLE", "NFC is not available", null)
+            return
+        })
+        result.success(ce.setPreferredService(act, hceComponentName()))
+    }
+
+    private fun clearPreferredHceService(result: Result) {
+        val act = activity ?: run {
+            result.error("NO_ACTIVITY", "Plugin is not attached to an activity", null)
+            return
+        }
+        val ce = CardEmulation.getInstance(nfcAdapter ?: run {
+            result.error("NFC_UNAVAILABLE", "NFC is not available", null)
+            return
+        })
+        ce.unsetPreferredService(act)
+        result.success(null)
+    }
+
+    private fun openHceDefaultSettings(result: Result) {
+        val act = activity ?: run {
+            result.error("NO_ACTIVITY", "Plugin is not attached to an activity", null)
+            return
+        }
+        val intent = Intent(CardEmulation.ACTION_CHANGE_DEFAULT).apply {
+            putExtra(CardEmulation.EXTRA_SERVICE_COMPONENT, hceComponentName())
+            putExtra(CardEmulation.EXTRA_CATEGORY, CardEmulation.CATEGORY_OTHER)
+        }
+        act.startActivity(intent)
+        result.success(null)
     }
 
     // -------------------------------------------------------------------------
